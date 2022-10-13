@@ -1,0 +1,139 @@
+node-entities (3.0.1-3) unstable; urgency=medium
+
+  * Indicate that this update breaks node-dom-serializer < 1.3.2
+
+ -- Yadd <yadd@debian.org>  Sat, 16 Oct 2021 08:28:03 +0200
+
+node-entities (3.0.1-2) experimental; urgency=medium
+
+  * Indicate that version 3 breaks node-cheerio < 1.0.0~rc~10~ and
+    node-htmlparser2 < 7.1.2~
+
+ -- Yadd <yadd@debian.org>  Fri, 15 Oct 2021 11:41:45 +0200
+
+node-entities (3.0.1-1) experimental; urgency=medium
+
+  * Fix GitHub tags regex
+  * Update standards version to 4.6.0, no changes needed.
+  * New upstream version 3.0.1
+  * Update build dependenies: jest instead of mocha
+  * Drop patch, use debian/nodejs/ext* instead
+  * Reenable test using jest ≥ 27
+
+ -- Yadd <yadd@debian.org>  Wed, 13 Oct 2021 13:11:35 +0200
+
+node-entities (2.2.0-1) unstable; urgency=medium
+
+  * Declare compliance with policy 4.5.1
+  * New upstream version 2.2.0
+
+ -- Xavier Guimard <yadd@debian.org>  Sat, 30 Jan 2021 09:34:46 +0100
+
+node-entities (2.1.0-1) unstable; urgency=medium
+
+  [ Pirate Praveen ]
+  * Update minimum version of node-typescript-types
+
+  [ Debian Janitor ]
+  * Apply multi-arch hints.
+    + node-entities: Add Multi-Arch: foreign.
+
+  [ Xavier Guimard ]
+  * Fix typo in description (Closes: #969712)
+  * Bump debhelper compatibility level to 13
+  * Use dh-sequence-nodejs
+  * New upstream version 2.1.0
+
+ -- Xavier Guimard <yadd@debian.org>  Sat, 31 Oct 2020 08:15:12 +0100
+
+node-entities (2.0.2-2) unstable; urgency=medium
+
+  * Team Upload
+
+  [ Debian Janitor ]
+  * Use correct machine-readable copyright file URI.
+  * Set upstream metadata fields: Bug-Submit.
+
+  [ Pirate Praveen ]
+  * Drop runtime dependency on nodejs (to avoid installing nodejs with
+    libjs-markdown-it)
+
+ -- Pirate Praveen <praveen@debian.org>  Sun, 06 Sep 2020 15:36:52 +0530
+
+node-entities (2.0.2-1) unstable; urgency=medium
+
+  * New upstream version 2.0.2
+  * Refresh patch
+  * Drop test (jest not packaged)
+  * Update copyright
+
+ -- Xavier Guimard <yadd@debian.org>  Thu, 21 May 2020 09:43:56 +0200
+
+node-entities (2.0.0+dfsg-4) unstable; urgency=medium
+
+  * Patch ts-node for yn ≥ 4 (Closes: #954720)
+
+ -- Xavier Guimard <yadd@debian.org>  Sun, 22 Mar 2020 20:36:01 +0100
+
+node-entities (2.0.0+dfsg-3) unstable; urgency=medium
+
+  * Fix test (Closes: #952177):
+    + Update debian/clean
+    + Fix tsconfig to use system typescript files
+    + Remove unneeded embedded test files
+    + Enable upstream test during autopkgtest
+  * Update lintian overrides
+
+ -- Xavier Guimard <yadd@debian.org>  Sun, 23 Feb 2020 21:12:46 +0100
+
+node-entities (2.0.0+dfsg-2) unstable; urgency=medium
+
+  * Update embedded test modules
+  * Fix tsc src paths
+  * Fix test for mocha ≥ 6
+  * Add build dependency to node-diff
+  * Declare compliance with policy 4.5.0
+  * Update lintian overrides
+
+ -- Xavier Guimard <yadd@debian.org>  Sun, 02 Feb 2020 11:33:09 +0100
+
+node-entities (2.0.0+dfsg-1) unstable; urgency=medium
+
+  * Add debian/watch
+  * Switch to pkg-js-tools auto install
+  * Bump debhelper compatibility level to 12
+  * Declare compliance with policy 4.4.1
+  * Add debian/gbp.conf
+  * Add upstream/metadata
+  * New upstream version 2.0.0
+  * Build with tsc
+  * Exclude lib from import
+  * New upstream version 2.0.0
+  * Enable upstream test (build only), this embeds some little modules in
+    debian/tests/test_modules (for test only)
+  * Add lintian-overrides
+
+ -- Xavier Guimard <yadd@debian.org>  Mon, 30 Sep 2019 22:40:22 +0200
+
+node-entities (1.1.1-2) unstable; urgency=medium
+
+  * Team upload
+
+  [ Xavier Guimard ]
+  * Replace Martin Borgert by myself in uploaders list. Thanks for your work!
+    (Closes: #892605)
+
+  [ Graham Inggs ]
+  * Switch to autopkgtest-pkg-nodejs (Closes: #894937)
+  * Update Vcs-* fields for move to salsa
+  * Switch to Section: javascript, Priority: optional
+  * Use secure copyright format URI
+  * Bump Standards-Version to 4.3.0, no further changes
+
+ -- Graham Inggs <ginggs@debian.org>  Sat, 25 May 2019 08:25:34 +0000
+
+node-entities (1.1.1-1) unstable; urgency=low
+
+  * Initial release (Closes: #743153)
+
+ -- W. Martin Borgert <debacle@debian.org>  Mon, 22 Sep 2014 08:42:13 +0000
