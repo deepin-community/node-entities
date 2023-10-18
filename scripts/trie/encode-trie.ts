@@ -1,8 +1,5 @@
-/* eslint-disable node/no-unsupported-features/es-builtins */
-
 import * as assert from "assert";
-import { BinTrieFlags, JUMP_OFFSET_BASE } from "../../src/decode";
-import { TrieNode } from "./trie";
+import type { TrieNode } from "./trie.js";
 
 function binaryLength(num: number) {
     return Math.ceil(Math.log2(num));
@@ -11,8 +8,7 @@ function binaryLength(num: number) {
 /**
  * Encodes the trie in binary form.
  *
- * We have four different types of nodes:
- * - Postfixes are ASCII values that match a particular character
+ * We have three different types of nodes:
  * - Values are UNICODE values that an entity resolves to
  * - Branches can be:
  *      1. If size is 1, then a matching character followed by the destination
@@ -32,7 +28,7 @@ export function encodeTrie(trie: TrieNode, maxJumpTableOverhead = 2): number[] {
     const encodeCache = new Map<TrieNode, number>();
     const enc: number[] = [];
 
-    function encodeNode(node: TrieNode, depth: number): number {
+    function encodeNode(node: TrieNode): number {
         // Cache nodes, as we can have loops
         const cached = encodeCache.get(node);
         if (cached != null) return cached;
@@ -41,46 +37,50 @@ export function encodeTrie(trie: TrieNode, maxJumpTableOverhead = 2): number[] {
 
         encodeCache.set(node, startIndex);
 
-        if (node.postfix != null) {
-            for (let i = 0; i < node.postfix.length; i++) {
-                const char = node.postfix.charCodeAt(i);
-
-                assert.ok(char < 128, "Char not in range");
-
-                // Start record with the postfix, as we have to match this first.
-                enc.push(char);
-            }
-        }
-
         const nodeIdx = enc.push(0) - 1;
 
         if (node.value != null) {
-            enc[nodeIdx] |= BinTrieFlags.HAS_VALUE;
+            let valueLength = 0;
 
-            if (node.value.length === 2) {
-                enc[nodeIdx] |= BinTrieFlags.MULTI_BYTE;
+            /*
+             * If we don't have a branch and the value is short, we can
+             * store the value in the node.
+             */
+            if (
+                node.next ||
+                node.value.length > 1 ||
+                binaryLength(node.value.charCodeAt(0)) > 14
+            ) {
+                valueLength = node.value.length;
             }
 
-            for (let i = 0; i < node.value.length; i++)
-                enc.push(node.value.charCodeAt(i));
+            // Add 1 to the value length, to signal that we have a value.
+            valueLength += 1;
+
+            assert.ok(
+                binaryLength(valueLength) <= 2,
+                "Too many bits for value length"
+            );
+
+            enc[nodeIdx] |= valueLength << 14;
+
+            if (valueLength === 1) {
+                enc[nodeIdx] |= node.value.charCodeAt(0);
+            } else {
+                for (let i = 0; i < node.value.length; i++) {
+                    enc.push(node.value.charCodeAt(i));
+                }
+            }
         }
 
-        if (node.next) addBranches(node.next, nodeIdx, depth + 1);
+        if (node.next) addBranches(node.next, nodeIdx);
 
-        assert.strictEqual(
-            nodeIdx,
-            startIndex + (node.postfix?.length ?? 0),
-            "Has expected location"
-        );
+        assert.strictEqual(nodeIdx, startIndex, "Has expected location");
 
         return startIndex;
     }
 
-    function addBranches(
-        next: Map<number, TrieNode>,
-        nodeIdx: number,
-        depth: number
-    ) {
+    function addBranches(next: Map<number, TrieNode>, nodeIdx: number) {
         const branches = Array.from(next.entries());
 
         // Sort branches ASC by key
@@ -93,11 +93,12 @@ export function encodeTrie(trie: TrieNode, maxJumpTableOverhead = 2): number[] {
 
         // If we only have a single branch, we can write the next value directly
         if (branches.length === 1 && !encodeCache.has(branches[0][1])) {
-            enc[nodeIdx] |= branches.length << 8; // Write the length of the branch
+            const [char, next] = branches[0];
 
-            const [[char, next]] = branches;
-            enc.push(char);
-            encodeNode(next, depth);
+            assert.ok(binaryLength(char) <= 7, "Too many bits for single char");
+
+            enc[nodeIdx] |= char;
+            encodeNode(next);
             return;
         }
 
@@ -106,29 +107,27 @@ export function encodeTrie(trie: TrieNode, maxJumpTableOverhead = 2): number[] {
         // If we have consecutive branches, we can write the next value as a jump table
 
         /*
-         * First, we determine how much overhead adding the jump table adds.
-         * If it is more than 2.5x, skip it.
+         * First, we determine how much space adding the jump table adds.
          *
-         * TODO: Determine best value
+         * If it is more than 2x the number of branches (which is equivalent
+         * to the size of the dictionary), skip it.
          */
 
-        const jumpStartValue = branches[0][0];
+        const jumpOffset = branches[0][0];
         const jumpEndValue = branches[branches.length - 1][0];
 
-        const jumpTableLength = jumpEndValue - jumpStartValue + 1;
+        const jumpTableLength = jumpEndValue - jumpOffset + 1;
 
         const jumpTableOverhead = jumpTableLength / branches.length;
 
         if (jumpTableOverhead <= maxJumpTableOverhead) {
-            const jumpOffset = jumpStartValue - JUMP_OFFSET_BASE;
-
             assert.ok(
                 binaryLength(jumpOffset) <= 16,
                 `Offset ${jumpOffset} too large at ${binaryLength(jumpOffset)}`
             );
 
             // Write the length of the adjusted table, plus jump offset
-            enc[nodeIdx] |= (jumpTableLength << 8) | jumpOffset;
+            enc[nodeIdx] |= (jumpTableLength << 7) | jumpOffset;
 
             assert.ok(
                 binaryLength(jumpTableLength) <= 7,
@@ -139,17 +138,16 @@ export function encodeTrie(trie: TrieNode, maxJumpTableOverhead = 2): number[] {
             for (let i = 0; i < jumpTableLength; i++) enc.push(0);
 
             // Write the jump table
-            for (let i = 0; i < branches.length; i++) {
-                const [char, next] = branches[i];
-                const index = char - jumpStartValue;
+            for (const [char, next] of branches) {
+                const index = char - jumpOffset;
                 // Write all values + 1, so 0 will result in a -1 when decoding
-                enc[branchIndex + index] = encodeNode(next, depth) + 1;
+                enc[branchIndex + index] = encodeNode(next) + 1;
             }
 
             return;
         }
 
-        enc[nodeIdx] |= branches.length << 8;
+        enc[nodeIdx] |= branches.length << 7;
 
         enc.push(
             ...branches.map(([char]) => char),
@@ -178,14 +176,14 @@ export function encodeTrie(trie: TrieNode, maxJumpTableOverhead = 2): number[] {
                 Number.MAX_SAFE_INTEGER,
                 "Should have the placeholder as the second element"
             );
-            const offset = encodeNode(next, depth);
+            const offset = encodeNode(next);
 
             assert.ok(binaryLength(offset) <= 16, "Too many bits for offset");
             enc[currentIndex] = offset;
         });
     }
 
-    encodeNode(trie, 0);
+    encodeNode(trie);
 
     // Make sure that every value fits in a UInt16
     assert.ok(
@@ -193,7 +191,7 @@ export function encodeTrie(trie: TrieNode, maxJumpTableOverhead = 2): number[] {
             (val) =>
                 typeof val === "number" && val >= 0 && binaryLength(val) <= 16
         ),
-        "Too many bytes"
+        "Too many bits"
     );
 
     return enc;

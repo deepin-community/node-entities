@@ -17,7 +17,8 @@ Build-Depends: debhelper-compat (= 13)
  , node-types-jest (>= 27)
  , node-yn (>= 4.0.0) <!nocheck>
  , ts-jest (>= 27) <!nocheck>
-Standards-Version: 4.6.0
+ , ts-node
+Standards-Version: 4.6.2
 Homepage: https://github.com/fb55/entities
 Vcs-Git: https://salsa.debian.org/js-team/node-entities.git
 Vcs-Browser: https://salsa.debian.org/js-team/node-entities
@@ -27,8 +28,9 @@ Package: node-entities
 Architecture: all
 Depends: ${misc:Depends}
 Breaks: node-cheerio (<< 1.0.0~rc~10~)
- , node-htmlparser2 (<< 7.1.2~)
+ , node-htmlparser2 (<< 8~)
  , node-dom-serializer (<< 1.3.2~)
+ , node-markdown-it (<< 22.2.3+dfsg+~12.2.3-2~)
 Multi-Arch: foreign
 Description: Node.js module to encode and decode XML/HTML entities with ease
  node-entities encodes and decodes three selectable levels of entities: XML,

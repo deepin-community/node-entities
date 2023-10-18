@@ -1,2 +1,5 @@
+debian/rules
+maps
+scripts
 src
 tsconfig.json

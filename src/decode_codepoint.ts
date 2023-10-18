@@ -2,6 +2,7 @@
 
 const decodeMap = new Map([
     [0, 65533],
+    // C1 Unicode control character reference replacements
     [128, 8364],
     [130, 8218],
     [131, 402],
@@ -31,9 +32,12 @@ const decodeMap = new Map([
     [159, 376],
 ]);
 
-const fromCodePoint =
+/**
+ * Polyfill for `String.fromCodePoint`. It is used to create a string from a Unicode code point.
+ */
+export const fromCodePoint =
     // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition, node/no-unsupported-features/es-builtins
-    String.fromCodePoint ||
+    String.fromCodePoint ??
     function (codePoint: number): string {
         let output = "";
 
@@ -49,10 +53,26 @@ const fromCodePoint =
         return output;
     };
 
-export default function decodeCodePoint(codePoint: number): string {
+/**
+ * Replace the given code point with a replacement character if it is a
+ * surrogate or is outside the valid range. Otherwise return the code
+ * point unchanged.
+ */
+export function replaceCodePoint(codePoint: number) {
     if ((codePoint >= 0xd800 && codePoint <= 0xdfff) || codePoint > 0x10ffff) {
-        return "\uFFFD";
+        return 0xfffd;
     }
 
-    return fromCodePoint(decodeMap.get(codePoint) ?? codePoint);
+    return decodeMap.get(codePoint) ?? codePoint;
+}
+
+/**
+ * Replace the code point if relevant, then convert it to a string.
+ *
+ * @deprecated Use `fromCodePoint(replaceCodePoint(codePoint))` instead.
+ * @param codePoint The code point to decode.
+ * @returns The decoded code point.
+ */
+export default function decodeCodePoint(codePoint: number): string {
+    return fromCodePoint(replaceCodePoint(codePoint));
 }

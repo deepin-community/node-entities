@@ -1,3 +1,7 @@
 lib/
 node_modules/
 */*.js
+scripts/trie/encode-trie.js
+scripts/trie/trie.js
+src/generated/decode-data-html.ts
+src/generated/encode-html.ts

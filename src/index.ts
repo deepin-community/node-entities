@@ -1,10 +1,11 @@
-import { decodeXML, decodeHTML, decodeHTMLStrict } from "./decode";
+import { decodeXML, decodeHTML, DecodingMode } from "./decode.js";
+import { encodeHTML, encodeNonAsciiHTML } from "./encode.js";
 import {
     encodeXML,
     escapeUTF8,
-    encodeHTML,
-    encodeNonAsciiHTML,
-} from "./encode";
+    escapeAttribute,
+    escapeText,
+} from "./escape.js";
 
 /** The level of entities to support. */
 export enum EntityLevel {
@@ -14,18 +15,10 @@ export enum EntityLevel {
     HTML = 1,
 }
 
-/** Determines whether some entities are allowed to be written without a trailing `;`. */
-export enum DecodingMode {
-    /** Support legacy HTML entities. */
-    Legacy = 0,
-    /** Do not support legacy HTML entities. */
-    Strict = 1,
-}
-
 export enum EncodingMode {
     /**
      * The output is UTF-8 encoded. Only characters that need escaping within
-     * HTML will be escaped.
+     * XML will be escaped.
      */
     UTF8,
     /**
@@ -39,12 +32,22 @@ export enum EncodingMode {
      * characters that are not ASCII characters.
      */
     Extensive,
+    /**
+     * Encode all characters that have to be escaped in HTML attributes,
+     * following {@link https://html.spec.whatwg.org/multipage/parsing.html#escapingString}.
+     */
+    Attribute,
+    /**
+     * Encode all characters that have to be escaped in HTML text,
+     * following {@link https://html.spec.whatwg.org/multipage/parsing.html#escapingString}.
+     */
+    Text,
 }
 
-interface DecodingOptions {
+export interface DecodingOptions {
     /**
      * The level of entities to support.
-     * @default EntityLevel.XML
+     * @default {@link EntityLevel.XML}
      */
     level?: EntityLevel;
     /**
@@ -56,9 +59,9 @@ interface DecodingOptions {
      *
      * The deprecated `decodeStrict` function defaults this to `Strict`.
      *
-     * @default DecodingMode.Legacy
+     * @default {@link DecodingMode.Legacy}
      */
-    mode?: DecodingMode;
+    mode?: DecodingMode | undefined;
 }
 
 /**
@@ -71,13 +74,11 @@ export function decode(
     data: string,
     options: DecodingOptions | EntityLevel = EntityLevel.XML
 ): string {
-    const opts = typeof options === "number" ? { level: options } : options;
+    const level = typeof options === "number" ? options : options.level;
 
-    if (opts.level === EntityLevel.HTML) {
-        if (opts.mode === DecodingMode.Strict) {
-            return decodeHTMLStrict(data);
-        }
-        return decodeHTML(data);
+    if (level === EntityLevel.HTML) {
+        const mode = typeof options === "object" ? options.mode : undefined;
+        return decodeHTML(data, mode);
     }
 
     return decodeXML(data);
@@ -95,15 +96,9 @@ export function decodeStrict(
     options: DecodingOptions | EntityLevel = EntityLevel.XML
 ): string {
     const opts = typeof options === "number" ? { level: options } : options;
+    opts.mode ??= DecodingMode.Strict;
 
-    if (opts.level === EntityLevel.HTML) {
-        if (opts.mode === DecodingMode.Legacy) {
-            return decodeHTML(data);
-        }
-        return decodeHTMLStrict(data);
-    }
-
-    return decodeXML(data);
+    return decode(data, opts);
 }
 
 /**
@@ -112,12 +107,12 @@ export function decodeStrict(
 export interface EncodingOptions {
     /**
      * The level of entities to support.
-     * @default EntityLevel.XML
+     * @default {@link EntityLevel.XML}
      */
     level?: EntityLevel;
     /**
      * Output format.
-     * @default EncodingMode.Extensive
+     * @default {@link EncodingMode.Extensive}
      */
     mode?: EncodingMode;
 }
@@ -136,6 +131,8 @@ export function encode(
 
     // Mode `UTF8` just escapes XML entities
     if (opts.mode === EncodingMode.UTF8) return escapeUTF8(data);
+    if (opts.mode === EncodingMode.Attribute) return escapeAttribute(data);
+    if (opts.mode === EncodingMode.Text) return escapeText(data);
 
     if (opts.level === EntityLevel.HTML) {
         if (opts.mode === EncodingMode.ASCII) {
@@ -151,23 +148,31 @@ export function encode(
 
 export {
     encodeXML,
-    encodeHTML,
-    encodeNonAsciiHTML,
     escape,
     escapeUTF8,
+    escapeAttribute,
+    escapeText,
+} from "./escape.js";
+
+export {
+    encodeHTML,
+    encodeNonAsciiHTML,
     // Legacy aliases (deprecated)
     encodeHTML as encodeHTML4,
     encodeHTML as encodeHTML5,
-} from "./encode";
+} from "./encode.js";
 
 export {
+    EntityDecoder,
+    DecodingMode,
     decodeXML,
     decodeHTML,
     decodeHTMLStrict,
+    decodeHTMLAttribute,
     // Legacy aliases (deprecated)
     decodeHTML as decodeHTML4,
     decodeHTML as decodeHTML5,
     decodeHTMLStrict as decodeHTML4Strict,
     decodeHTMLStrict as decodeHTML5Strict,
     decodeXML as decodeXMLStrict,
-} from "./decode";
+} from "./decode.js";
