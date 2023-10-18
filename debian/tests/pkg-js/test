@@ -1,1 +1,2 @@
+make -f debian/rules generated
 jest --ci

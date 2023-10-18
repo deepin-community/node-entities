@@ -42,6 +42,21 @@ describe("Encode->decode test", () => {
             "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAALAAABAAEAAAIBRAA7";
         expect(entities.decode(entities.encode(data))).toBe(data);
     });
+
+    it("should HTML encode all ASCII characters", () => {
+        for (let i = 0; i < 128; i++) {
+            const char = String.fromCharCode(i);
+            const encoded = entities.encodeHTML(char);
+            const decoded = entities.decodeHTML(encoded);
+            expect(decoded).toBe(char);
+        }
+    });
+
+    it("should encode trailing parts of entities", () =>
+        expect(entities.encodeHTML("\ud835")).toBe("&#xd835;"));
+
+    it("should encode surrogate pair with first surrogate equivalent of entity, without corresponding entity", () =>
+        expect(entities.encodeHTML("\u{1d4a4}")).toBe("&#x1d4a4;"));
 });
 
 describe("encodeNonAsciiHTML", () => {

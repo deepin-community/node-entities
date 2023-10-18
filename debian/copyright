@@ -1,6 +1,8 @@
 Format: https://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
 Upstream-Name: entities
 Files-Excluded: lib
+ src/generated/decode-data-html.ts
+ src/generated/encode-html.ts
 
 Files: *
 Copyright: Felix Böhm <me@feedic.com>

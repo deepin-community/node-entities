@@ -6,5 +6,23 @@
 %:
 	dh $@
 
-override_dh_auto_build:
+generated: src/generated/decode-data-html.ts src/generated/encode-html.ts
+
+override_dh_auto_build: generated
 	tsc
+	tsc --module esnext --target es2019 --outDir lib/esm
+	echo '{"type":"module"}' > lib/esm/package.json
+
+scripts/trie/trie.js:
+	tsc --downlevelIteration scripts/trie/trie.ts
+
+scripts/trie/encode-trie.js:
+	tsc --downlevelIteration scripts/trie/encode-trie.ts
+
+src/generated/decode-data-html.ts: scripts/trie/trie.js scripts/trie/encode-trie.js
+	ts-node scripts/write-decode-map.ts
+
+src/generated/encode-html.ts: scripts/trie/trie.js scripts/trie/encode-trie.js
+	ts-node scripts/write-encode-map.ts
+
+.PHONY: generated

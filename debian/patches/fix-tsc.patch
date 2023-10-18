@@ -1,0 +1,15 @@
+Description: fix tsc
+Author: Yadd <yadd@debian.org>
+Forwarded: not-needed
+Last-Update: 2022-04-30
+
+--- a/scripts/trie/decode-trie.spec.ts
++++ b/scripts/trie/decode-trie.spec.ts
+@@ -20,6 +20,7 @@
+ ): Record<string, string> {
+     const merged = {
+         ...legacy,
++// @ts-ignore
+         ...Object.fromEntries(
+             Object.entries(map).map(([key, value]) => [`${key};`, value])
+         ),
